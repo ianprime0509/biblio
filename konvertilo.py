@@ -59,6 +59,11 @@ if __name__ == '__main__':
 
     with open('sankta-biblio.tex', 'w') as biblio_eligo:
         biblio_eligo.write('\\input{antaŭparolo.tex}\n\\begin{document}\n')
+        biblio_eligo.write('\\input{titolpaĝo.tex}\n')
+        biblio_eligo.write('\\mainmatter\n')
+
+        biblio_eligo.write('\\input{titolpaĝo-mt.tex}\n')
+        biblio_eligo.write('\\biblecontent\n')
 
         malnova_testamento = radiko.find(".//text[@id='MT']")
         mt_libroj = malnova_testamento.findall("./body/div[@type='book']")

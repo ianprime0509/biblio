@@ -3,6 +3,7 @@
 \usepackage{xcolor}
 %\usepackage[paper=a5paper]{geometry}
 
+\usepackage{microtype}
 \usepackage{noto}
 
 \usepackage[esperanto]{babel}
@@ -11,16 +12,30 @@
 \usepackage{fancyhdr}
 \usepackage{ifthen}
 
-\setcounter{tocdepth}{0}
+\setcounter{tocdepth}{2}
 
 \newcommand{\mymarks}{%
   \ifthenelse{\equal{\rightmark}{\leftmark}}%
   {\rightmark}%
-  {\rightmark--\leftmark}}
+  {\rightmark--\leftmark}%
+}
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[C]{\thepage}
-\fancyhead[OL,ER]{\bookname~\mymarks}
+\renewcommand{\headrulewidth}{0pt}
+
+\newcommand{\biblecontent}{%
+  \fancyhf{}%
+  \fancyhead[C]{\thepage}%
+  \fancyhead[OL,ER]{\bookname~\mymarks}%
+}
+
+\newcommand{\frontmatter}{%
+  \pagenumbering{roman}%
+}
+
+\newcommand{\mainmatter}{%
+  \pagenumbering{arabic}%
+}
 
 \setlength{\parskip}{0.5em}
 
@@ -31,7 +46,7 @@
 \newenvironment{book}[2][]{%
   \setcounter{chapter}{0}%
   \renewcommand{\bookname}{#2}%
-  \addcontentsline{toc}{section}{#2}%
+  \addcontentsline{toc}{subsection}{#2}%
   \begin{center}{\scshape\Huge #2}%
   \ifthenelse{\not\equal{#1}{}}{%
     \par\medskip{\scshape\large #1}%
