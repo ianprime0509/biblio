@@ -1,0 +1,60 @@
+\documentclass[a5paper]{article}
+
+\usepackage{xcolor}
+%\usepackage[paper=a5paper]{geometry}
+
+\usepackage{noto}
+
+\usepackage[esperanto]{babel}
+\usepackage{blindtext}
+\usepackage{changepage}
+\usepackage{fancyhdr}
+\usepackage{ifthen}
+
+\setcounter{tocdepth}{0}
+
+\newcommand{\mymarks}{%
+  \ifthenelse{\equal{\rightmark}{\leftmark}}%
+  {\rightmark}%
+  {\rightmark--\leftmark}}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[C]{\thepage}
+\fancyhead[OL,ER]{\bookname~\mymarks}
+
+\setlength{\parskip}{0.5em}
+
+\newcommand{\bookname}{}
+\newcounter{chapter}
+\newcounter{verse}
+
+\newenvironment{book}[2][]{%
+  \setcounter{chapter}{0}%
+  \renewcommand{\bookname}{#2}%
+  \addcontentsline{toc}{section}{#2}%
+  \begin{center}{\scshape\Huge #2}%
+  \ifthenelse{\not\equal{#1}{}}{%
+    \par\medskip{\scshape\large #1}%
+  }{}%
+  \end{center}%
+}{%
+  \clearpage%
+}
+
+\newenvironment{chapter}[1]{%
+  \stepcounter{chapter}%
+  \mbox{\LARGE #1}%
+}{%
+  \par\medskip%
+}
+
+\renewcommand{\verse}[2]{%
+  \setcounter{verse}{#1}%
+  \ifthenelse{\not\equal{#1}{1}}{%
+    \raisebox{0.4ex}{\scriptsize #1}%
+  }{}~\markboth{\arabic{chapter}:\arabic{verse}}{\arabic{chapter}:\arabic{verse}}#2%
+  \markboth{\arabic{chapter}:\arabic{verse}}{\arabic{chapter}:\arabic{verse}}%
+}
+
+\newenvironment{indented}{\begin{adjustwidth}{1cm}{}}%
+{\end{adjustwidth}\vspace*{-\baselineskip}}

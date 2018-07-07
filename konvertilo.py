@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import os
 import xml.etree.ElementTree as ET
 
@@ -21,37 +22,53 @@ def eligi_ĉapitron(eligo, ĉapitro):
         versoj = alineo.findall("./l")
         for verso in versoj:
             if verso.get('rend') != 'cont':
-                eligo.write('\\verse{{{}}} '.format(verso.get('n')))
+                eligo.write('\\verse{{{}}}{{'.format(verso.get('n')))
             eligo.write(verso.text)
             for lb in verso.findall("./lb"):
                 tail = '' if lb.tail is None else lb.tail
                 eligo.write('\\newline' + tail)
+            if verso.get('rend') != 'cont':
+                eligo.write('}')
             eligo.write('\n')
         if alineo.get('rend') == 'indent':
             eligo.write('\\end{indented}\n')
         eligo.write('\\par\n')
 
-if __name__ == '__main__':
-    tree = ET.parse('biblio.xml')
-    root = tree.getroot()
+def eligi_libron(eligo, libro):
+    rubrikoj = libro.findall("./head")
+    titolo = titoluskligi(rubrikoj[0].text)
+    if len(rubrikoj) == 1:
+        eligo.write('\\begin{{book}}{{{}}}\n'.format(titolo))
+    else:
+        subtitolo = titoluskligi(rubrikoj[1].text)
+        eligo.write('\\begin{{book}}[{}]{{{}}}\n'.format(subtitolo, titolo))
+    ĉapitroj = libro.findall("./div[@type='chapter']")
+    for ĉapitro in ĉapitroj:
+        eligo.write('\\begin{{chapter}}{{{}}}\n'.format(ĉapitro.get('n')))
+        eligi_ĉapitron(eligo, ĉapitro)
+        eligo.write('\\end{chapter}\n')
+    eligo.write('\\end{book}\n')
 
-    malnova_testamento = root.find(".//text[@id='MT']")
-    mt_libroj = malnova_testamento.findall("./body/div[@type='book']")
-    mt_dosierujo = 'libroj/mt'
-    os.makedirs(mt_dosierujo, exist_ok=True)
-    for libro in mt_libroj:
-        eligo = open('{}/{}.tex'.format(mt_dosierujo, libro.get('id')), 'w')
-        rubrikoj = libro.findall("./head")
-        titolo = titoluskligi(rubrikoj[0].text)
-        if len(rubrikoj) == 1:
-            eligo.write('\\begin{{book}}{{{}}}\n'.format(titolo))
-        else:
-            subtitolo = titoluskligi(rubrikoj[1].text)
-            eligo.write('\\begin{{book}}[{}]{{{}}}\n'.format(subtitolo, titolo))
-        ĉapitroj = libro.findall("./div[@type='chapter']")
-        for ĉapitro in ĉapitroj:
-            eligo.write('\\begin{{chapter}}{{{}}}\n'.format(ĉapitro.get('n')))
-            eligi_ĉapitron(eligo, ĉapitro)
-            eligo.write('\\end{chapter}\n')
-        eligo.write('\\end{book}\n')
-        eligo.close()
+if __name__ == '__main__':
+    argumentilo = argparse.ArgumentParser()
+    argumentilo.add_argument('-g', '--nur-genezo', action='store_true')
+    argumentoj = argumentilo.parse_args()
+
+    arbo = ET.parse('biblio.xml')
+    radiko = arbo.getroot()
+
+    with open('sankta-biblio.tex', 'w') as biblio_eligo:
+        biblio_eligo.write('\\input{antaŭparolo.tex}\n\\begin{document}\n')
+
+        malnova_testamento = radiko.find(".//text[@id='MT']")
+        mt_libroj = malnova_testamento.findall("./body/div[@type='book']")
+        mt_dosierujo = 'libroj/mt'
+        os.makedirs(mt_dosierujo, exist_ok=True)
+        for libro in mt_libroj:
+            dosiernomo = '{}/{}.tex'.format(mt_dosierujo, libro.get('id'))
+            if not argumentoj.nur_genezo or libro.get('id') == 'libro_gen':
+                biblio_eligo.write('\\input{{{}}}\n'.format(dosiernomo))
+            with open(dosiernomo, 'w') as eligo:
+                eligi_libron(eligo, libro)
+
+        biblio_eligo.write('\\end{document}\n')
