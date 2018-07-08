@@ -1,9 +1,7 @@
 \documentclass[a5paper]{article}
 
-\usepackage{xcolor}
-%\usepackage[paper=a5paper]{geometry}
-
 \usepackage{microtype}
+\usepackage{fontspec}
 \usepackage{noto}
 
 \usepackage[esperanto]{babel}
@@ -11,6 +9,8 @@
 \usepackage{changepage}
 \usepackage{fancyhdr}
 \usepackage{ifthen}
+
+\usepackage[hidelinks]{hyperref}
 
 \setcounter{tocdepth}{2}
 
@@ -47,24 +47,36 @@
 \newcounter{chapter}
 \newcounter{verse}
 
-\newenvironment{book}[2][]{%
+\newenvironment{book}[3][]{%
   \setcounter{chapter}{0}%
   \renewcommand{\bookname}{#2}%
-  \addcontentsline{toc}{subsection}{#2}%
-  \begin{center}{\scshape\Huge #2}%
+  \addcontentsline{toc}{subsection}{\bookname}%
+  \begin{center}{\scshape\Huge #3}%
   \ifthenelse{\not\equal{#1}{}}{%
     \par\medskip{\scshape\large #1}%
   }{}%
-  \end{center}%
+  \end{center}\nopagebreak%
 }{%
   \clearpage%
 }
 
+\newcommand{\heading}[1]{%
+  \begin{center}{\scshape\large #1}\end{center}\par\nopagebreak%
+}
+
 \newenvironment{chapter}[1]{%
   \stepcounter{chapter}%
-  \mbox{\LARGE #1}%
+  \mbox{\LARGE #1}~\ignorespaces%
 }{%
   \par\medskip%
+}
+
+\newenvironment{psalm}[1]{%
+  \stepcounter{chapter}%
+  \begin{center}\mbox{\LARGE #1}\end{center}%
+  \nopagebreak\noindent\ignorespaces%
+}{%
+  \par%
 }
 
 \renewcommand{\verse}[2]{%
@@ -73,6 +85,18 @@
     \raisebox{0.4ex}{\scriptsize #1}%
   }{}~\markboth{\arabic{chapter}:\arabic{verse}}{\arabic{chapter}:\arabic{verse}}#2%
   \markboth{\arabic{chapter}:\arabic{verse}}{\arabic{chapter}:\arabic{verse}}%
+}
+
+\newcommand{\psalmverse}[2]{%
+  \setcounter{verse}{#1}%
+  \markboth{\arabic{chapter}:\arabic{verse}}{\arabic{chapter}:\arabic{verse}}%
+  \noindent\ignorespaces\llap{\raisebox{0.4ex}{\scriptsize #1}~}#2%
+  \markboth{\arabic{chapter}:\arabic{verse}}{\arabic{chapter}:\arabic{verse}}%
+  \ignorespaces%
+}
+
+\newcommand{\sela}[1]{%
+  \hspace*{\fill}\textit{#1}%
 }
 
 \newenvironment{indented}{\begin{adjustwidth}{1cm}{}}%

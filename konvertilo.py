@@ -16,8 +16,13 @@ def titoluskligi(titolo):
     return ' '.join([vortoj[0].capitalize(), *resto])
 
 def eligi_ĉapitron(eligo, ĉapitro):
+    eligo.write('\\begin{{chapter}}{{{}}}\n'.format(ĉapitro.get('n')))
     alineoj = ĉapitro.findall("./lg[@type='para']")
     for alineo in alineoj:
+        rubriko = alineo.find("./head")
+        if rubriko is not None:
+            eligo.write('\\heading{{{}}}\n'.format(titoluskligi(rubriko.text)))
+
         if alineo.get('rend') == 'indent':
             eligo.write('\\begin{indented}\n')
         versoj = alineo.findall("./l")
@@ -26,25 +31,47 @@ def eligi_ĉapitron(eligo, ĉapitro):
         if alineo.get('rend') == 'indent':
             eligo.write('\\end{indented}\n')
         eligo.write('\\par\n')
+    eligo.write('\\end{chapter}\n')
 
 def eligi_libron(eligo, libro):
     rubrikoj = libro.findall("./head")
     titolo = titoluskligi(rubrikoj[0].text)
+    libronomo = titoluskligi(libro.find("./index").get('level1'))
     if len(rubrikoj) == 1:
-        eligo.write('\\begin{{book}}{{{}}}\n'.format(titolo))
+        eligo.write('\\begin{{book}}{{{}}}{{{}}}\n'.format(libronomo, titolo))
     else:
         subtitolo = titoluskligi(rubrikoj[1].text)
-        eligo.write('\\begin{{book}}[{}]{{{}}}\n'.format(subtitolo, titolo))
+        eligo.write('\\begin{{book}}[{}]{{{}}}{{{}}}\n'
+                    .format(subtitolo, libronomo, titolo))
     ĉapitroj = libro.findall("./div[@type='chapter']")
-    for ĉapitro in ĉapitroj:
-        eligo.write('\\begin{{chapter}}{{{}}}\n'.format(ĉapitro.get('n')))
-        eligi_ĉapitron(eligo, ĉapitro)
-        eligo.write('\\end{chapter}\n')
+    if len(ĉapitroj) > 0:
+        for ĉapitro in ĉapitroj:
+            eligi_ĉapitron(eligo, ĉapitro)
+    else:
+        # Probable ĝi estas la Psalmaro.
+        for psalmlibro in libro.findall("./div[@type='psalm_book']"):
+            rubriko = titoluskligi(psalmlibro.find("./head").text)
+            eligo.write('\\heading{{{}}}\n'.format(rubriko))
+            for psalmo in psalmlibro.findall("./div[@type='psalm']"):
+                eligi_psalmon(eligo, psalmo)
     eligo.write('\\end{book}\n')
 
-def eligi_verson(eligo, verso):
+def eligi_psalmon(eligo, psalmo):
+    eligo.write('\\begin{{psalm}}{{{}}}\n'.format(psalmo.get('n')))
+    alineoj = psalmo.findall("./lg[@type='para']")
+    for alineo in alineoj:
+        rubriko = alineo.find("./head")
+        if rubriko is not None:
+            eligo.write('\\heading{{{}}}\n'.format(titoluskligi(rubriko.text)))
+        versoj = alineo.findall("./l")
+        for verso in versoj:
+            eligi_verson(eligo, verso, tipo='psalmverse')
+        eligo.write('\\par\n')
+    eligo.write('\\end{psalm}\n')
+
+def eligi_verson(eligo, verso, tipo='verse'):
     if verso.get('rend') != 'cont':
-        eligo.write('\\verse{{{}}}{{'.format(verso.get('n')))
+        eligo.write('\\{}{{{}}}{{'.format(tipo, verso.get('n')))
     eligo.write(verso.text)
     for filo in verso:
         vosto = '' if filo.tail is None else filo.tail
@@ -52,6 +79,8 @@ def eligi_verson(eligo, verso):
             eligo.write('\\newline')
         elif filo.tag == 'note' and filo.get('type') == 'footnote':
             eligo.write('\\footnote{{{}}}'.format(filo.text))
+        elif filo.tag == 'hi' and filo.get('rend') == 'sela':
+            eligo.write('\\sela{{{}}}'.format(filo.text))
         else:
             print('Trovis nerekonitan elementon {}'.format(filo.tag),
                   file=sys.stderr)
@@ -62,7 +91,7 @@ def eligi_verson(eligo, verso):
 
 if __name__ == '__main__':
     argumentilo = argparse.ArgumentParser()
-    argumentilo.add_argument('-n', '--nur', required=True)
+    argumentilo.add_argument('-n', '--nur')
     argumentoj = argumentilo.parse_args()
 
     arbo = ET.parse('biblio.xml')
