@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import sys
 import xml.etree.ElementTree as ET
 
 def titoluskligi(titolo):
@@ -21,15 +22,7 @@ def eligi_ĉapitron(eligo, ĉapitro):
             eligo.write('\\begin{indented}\n')
         versoj = alineo.findall("./l")
         for verso in versoj:
-            if verso.get('rend') != 'cont':
-                eligo.write('\\verse{{{}}}{{'.format(verso.get('n')))
-            eligo.write(verso.text)
-            for lb in verso.findall("./lb"):
-                tail = '' if lb.tail is None else lb.tail
-                eligo.write('\\newline' + tail)
-            if verso.get('rend') != 'cont':
-                eligo.write('}')
-            eligo.write('\n')
+            eligi_verson(eligo, verso)
         if alineo.get('rend') == 'indent':
             eligo.write('\\end{indented}\n')
         eligo.write('\\par\n')
@@ -49,6 +42,24 @@ def eligi_libron(eligo, libro):
         eligo.write('\\end{chapter}\n')
     eligo.write('\\end{book}\n')
 
+def eligi_verson(eligo, verso):
+    if verso.get('rend') != 'cont':
+        eligo.write('\\verse{{{}}}{{'.format(verso.get('n')))
+    eligo.write(verso.text)
+    for filo in verso:
+        vosto = '' if filo.tail is None else filo.tail
+        if filo.tag == 'lb':
+            eligo.write('\\newline')
+        elif filo.tag == 'note' and filo.get('type') == 'footnote':
+            eligo.write('\\footnote{{{}}}'.format(filo.text))
+        else:
+            print('Trovis nerekonitan elementon {}'.format(filo.tag),
+                  file=sys.stderr)
+        eligo.write(vosto)
+    if verso.get('rend') != 'cont':
+        eligo.write('}')
+    eligo.write('\n')
+
 if __name__ == '__main__':
     argumentilo = argparse.ArgumentParser()
     argumentilo.add_argument('-n', '--nur', required=True)
@@ -65,6 +76,7 @@ if __name__ == '__main__':
         biblio_eligo.write('\\input{titolpaĝo}\n')
         biblio_eligo.write('\\mainmatter\n')
 
+        # Malnova Testamento
         biblio_eligo.write('\\input{titolpaĝo-mt}\n')
         biblio_eligo.write('\\biblecontent\n')
 
@@ -74,6 +86,20 @@ if __name__ == '__main__':
         os.makedirs(mt_dosierujo, exist_ok=True)
         for libro in mt_libroj:
             dosiernomo = '{}/{}'.format(mt_dosierujo, libro.get('id'))
+            biblio_eligo.write('\\include{{{}}}\n'.format(dosiernomo))
+            with open(dosiernomo + '.tex', 'w') as eligo:
+                eligi_libron(eligo, libro)
+
+        # Nova Testamento
+        biblio_eligo.write('\\input{titolpaĝo-nt}\n')
+        biblio_eligo.write('\\biblecontent\n')
+
+        nova_testamento = radiko.find(".//text[@id='NT']")
+        nt_libroj = nova_testamento.findall("./body/div[@type='book']")
+        nt_dosierujo = 'libroj/nt'
+        os.makedirs(nt_dosierujo, exist_ok=True)
+        for libro in nt_libroj:
+            dosiernomo = '{}/{}'.format(nt_dosierujo, libro.get('id'))
             biblio_eligo.write('\\include{{{}}}\n'.format(dosiernomo))
             with open(dosiernomo + '.tex', 'w') as eligo:
                 eligi_libron(eligo, libro)
