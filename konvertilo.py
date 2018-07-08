@@ -51,18 +51,21 @@ def eligi_libron(eligo, libro):
 
 if __name__ == '__main__':
     argumentilo = argparse.ArgumentParser()
-    argumentilo.add_argument('-g', '--nur-genezo', action='store_true')
+    argumentilo.add_argument('-n', '--nur', required=True)
     argumentoj = argumentilo.parse_args()
 
     arbo = ET.parse('biblio.xml')
     radiko = arbo.getroot()
 
     with open('sankta-biblio.tex', 'w') as biblio_eligo:
-        biblio_eligo.write('\\input{antaŭparolo.tex}\n\\begin{document}\n')
-        biblio_eligo.write('\\input{titolpaĝo.tex}\n')
+        biblio_eligo.write('\\input{antaŭparolo}\n')
+        if argumentoj.nur is not None:
+            biblio_eligo.write('\\includeonly{{{}}}\n'.format(argumentoj.nur))
+        biblio_eligo.write('\\begin{document}\n')
+        biblio_eligo.write('\\input{titolpaĝo}\n')
         biblio_eligo.write('\\mainmatter\n')
 
-        biblio_eligo.write('\\input{titolpaĝo-mt.tex}\n')
+        biblio_eligo.write('\\input{titolpaĝo-mt}\n')
         biblio_eligo.write('\\biblecontent\n')
 
         malnova_testamento = radiko.find(".//text[@id='MT']")
@@ -70,10 +73,9 @@ if __name__ == '__main__':
         mt_dosierujo = 'libroj/mt'
         os.makedirs(mt_dosierujo, exist_ok=True)
         for libro in mt_libroj:
-            dosiernomo = '{}/{}.tex'.format(mt_dosierujo, libro.get('id'))
-            if not argumentoj.nur_genezo or libro.get('id') == 'libro_gen':
-                biblio_eligo.write('\\input{{{}}}\n'.format(dosiernomo))
-            with open(dosiernomo, 'w') as eligo:
+            dosiernomo = '{}/{}'.format(mt_dosierujo, libro.get('id'))
+            biblio_eligo.write('\\include{{{}}}\n'.format(dosiernomo))
+            with open(dosiernomo + '.tex', 'w') as eligo:
                 eligi_libron(eligo, libro)
 
         biblio_eligo.write('\\end{document}\n')
